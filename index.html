@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hi-TraC LMS | AI for Education - Al Hikmah Training Center</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        hitrac: {
+                            emerald: '#064e3b',
+                            green: '#0b5e42',
+                            light: '#ecfdf5',
+                            gold: '#d4af37',
+                            goldLight: '#fef3c7',
+                            dark: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for sleek UI */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .gold-gradient {
+            background: linear-gradient(135deg, #d4af37 0%, #f3e5ab 50%, #b48a1e 100%);
+        }
+        .emerald-gradient {
+            background: linear-gradient(135deg, #064e3b 0%, #0b5e42 100%);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased selection:bg-emerald-200 selection:text-emerald-900">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- =====================================================================
+         LOGIN / AUTHENTICATION GATE (TOKEN UNIK SISWA & ACCESS CODE TRAINER)
+         ===================================================================== -->
+    <div id="auth-gate" class="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+        <!-- Decorative Background Glow -->
+        <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-emerald-800/20 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-md w-full bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10">
+            <!-- Brand Header -->
+            <div class="flex flex-col items-center text-center mb-6">
+                <div class="w-16 h-16 rounded-full bg-emerald-900 p-1 border-2 border-amber-400 flex items-center justify-center shadow-lg mb-3">
+                    <svg viewBox="0 0 100 100" class="w-13 h-13">
+                        <defs>
+                            <linearGradient id="authGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#fde68a"/>
+                                <stop offset="50%" stop-color="#d4af37"/>
+                                <stop offset="100%" stop-color="#92400e"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="50" cy="50" r="45" fill="#064e3b" stroke="url(#authGoldGrad)" stroke-width="5"/>
+                        <path d="M50 15 A35 35 0 1 0 83 62" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+                        <path d="M28 58 H72 M36 42 V58 M48 36 L62 58 M66 28 V58 M42 46 H58" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        <circle cx="31" cy="36" r="2.5" fill="#ffffff"/>
+                        <circle cx="31" cy="43" r="2.5" fill="#ffffff"/>
+                    </svg>
+                </div>
+                <h1 class="font-display font-extrabold text-2xl text-white tracking-tight">Hi-TraC LMS</h1>
+                <p class="text-[11px] font-bold tracking-widest text-amber-400 uppercase mt-0.5">Al Hikmah Training Center</p>
+                <p class="text-xs text-slate-400 mt-2">Sistem Pembelajaran & Monitoring Diklat <em>AI for Education</em></p>
+            </div>
+
+            <!-- Login Tab Selector (Peserta vs Trainer) -->
+            <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-6">
+                <button type="button" id="auth-tab-student" onclick="switchAuthTab('student')" class="py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 emerald-gradient text-white shadow-xs transition cursor-pointer">
+                    <i data-lucide="key-round" class="w-4 h-4 text-amber-300"></i>
+                    <span>Token Siswa</span>
+                </button>
+                <button type="button" id="auth-tab-trainer" onclick="switchAuthTab('trainer')" class="py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 text-slate-400 hover:text-white transition cursor-pointer">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Access Code Trainer</span>
+                </button>
+            </div>
+
+            <!-- Form Login Siswa (Token Unik) -->
+            <form id="form-login-student" onsubmit="handleStudentLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">Masukkan Token Unik Peserta</label>
+                    <div class="relative">
+                        <i data-lucide="ticket" class="w-4 h-4 text-amber-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="input-student-token" required placeholder="Contoh: HTR-01-FAUZI" class="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono uppercase tracking-wider text-white placeholder-slate-500 focus:outline-none focus:border-amber-400">
+                    </div>
+                </div>
+
+                <!-- Quick Demo Token Selector untuk Kemudahan Uji Coba -->
+                <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/90 space-y-2">
+                    <p class="text-[11px] font-semibold text-slate-400">Token Sampel Peserta Aktif (Klik untuk isi otomatis):</p>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="fillStudentToken('HTR-01-FAUZI')" class="px-2.5 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 font-mono text-[11px] cursor-pointer transition">HTR-01-FAUZI</button>
+                        <button type="button" onclick="fillStudentToken('HTR-02-RAHMA')" class="px-2.5 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 font-mono text-[11px] cursor-pointer transition">HTR-02-RAHMA</button>
+                        <button type="button" onclick="fillStudentToken('HTR-05-HENDRA')" class="px-2.5 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 font-mono text-[11px] cursor-pointer transition">HTR-05-HENDRA</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 rounded-xl emerald-gradient text-white font-bold text-sm shadow-lg hover:opacity-95 transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Masuk ke Portal Peserta</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4 text-amber-300"></i>
+                </button>
+            </form>
+
+            <!-- Form Login Trainer (Access Code Rahasia) -->
+            <form id="form-login-trainer" onsubmit="handleTrainerLogin(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">Trainer Master Access Code</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 text-amber-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                        <input type="password" id="input-trainer-code" required placeholder="Masukkan kode rahasia trainer..." class="w-full pl-10 pr-10 py-3 bg-slate-950 border border-slate-700 rounded-xl text-sm font-mono tracking-wider text-white placeholder-slate-500 focus:outline-none focus:border-amber-400">
+                        <button type="button" onclick="toggleAuthCodeVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-3 rounded-xl bg-amber-950/30 border border-amber-500/20 text-[11px] text-amber-200/90 flex items-start gap-2">
+                    <i data-lucide="info" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+                    <div>
+                        <p>Akses terbatas khusus Instruktur Hi-TraC untuk memantau ketuntasan & mengelola token peserta.</p>
+                        <button type="button" onclick="fillTrainerCode()" class="mt-1.5 underline font-bold text-amber-300 hover:text-amber-200 cursor-pointer">Gunakan Kode Demo Trainer</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 rounded-xl gold-gradient text-slate-950 font-extrabold text-sm shadow-lg hover:opacity-95 transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    <span>Masuk ke Dashboard Trainer</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         MAIN LMS APPLICATION SHELL (TERSEMBUNYI SEBELUM LOGIN)
+         ===================================================================== -->
+    <div id="app-shell" class="hidden">
+
+    <!-- Top Global Header -->
+    <header class="bg-slate-950 text-white border-b border-slate-800 sticky top-0 z-40 shadow-md">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+            <!-- Brand Hi-TraC -->
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-emerald-900 p-0.5 border-2 border-amber-400 flex items-center justify-center shadow-inner shrink-0">
+                    <svg viewBox="0 0 100 100" class="w-9 h-9">
+                        <defs>
+                            <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#fde68a"/>
+                                <stop offset="50%" stop-color="#d4af37"/>
+                                <stop offset="100%" stop-color="#92400e"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="50" cy="50" r="45" fill="#064e3b" stroke="url(#goldGrad)" stroke-width="5"/>
+                        <path d="M50 15 A35 35 0 1 0 83 62" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+                        <path d="M28 58 H72 M36 42 V58 M48 36 L62 58 M66 28 V58 M42 46 H58" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        <circle cx="31" cy="36" r="2.5" fill="#ffffff"/>
+                        <circle cx="31" cy="43" r="2.5" fill="#ffffff"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-display font-extrabold text-xl tracking-tight text-white">Hi-TraC LMS</span>
+                        <span id="header-role-badge" class="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-800/90 text-emerald-200 border border-emerald-600/50">Portal Peserta</span>
+                    </div>
+                    <p class="text-[10px] font-semibold tracking-widest text-amber-400 uppercase">Al Hikmah Training Center</p>
+                </div>
+            </div>
+
+            <!-- Active User Identity, Token Badge & Logout -->
+            <div class="flex items-center gap-3 sm:gap-4">
+                <div class="text-right">
+                    <div class="flex items-center justify-end gap-2">
+                        <p id="header-user-name" class="text-xs font-bold text-white">Ust. Ahmad Fauzi, S.Pd.</p>
+                        <span id="header-token-pill" class="hidden sm:inline-block px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-amber-300">HTR-01-FAUZI</span>
+                    </div>
+                    <p id="header-user-role" class="text-[11px] text-emerald-400">Peserta Batch #04 • Progres: <span id="header-progress-pct" class="font-bold text-amber-300">25%</span></p>
+                </div>
+                <div id="header-user-avatar" class="w-10 h-10 rounded-xl gold-gradient text-slate-950 font-extrabold text-xs flex items-center justify-center shadow-xs shrink-0 overflow-hidden border border-amber-400/60">
+                    AF
+                </div>
+                <button onclick="logoutSession()" title="Keluar Sesi" class="px-3 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 text-rose-200 border border-rose-800/60 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Keluar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- =====================================================================
+         VIEW 1: PORTAL SISWA / PESERTA (LAYOUT 2 KOLOM: KIRI DAFTAR KELAS, KANAN ISI KELAS)
+         ===================================================================== -->
+    <div id="view-student" class="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- KOLOM KIRI (4 Kolom di Desktop): DAFTAR NAMA KELAS (16 MINGGU) -->
+            <aside class="lg:col-span-4 xl:col-span-3 bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden lg:sticky lg:top-24 flex flex-col max-h-[calc(100vh-7.5rem)]">
+                <!-- Header Kolom Kiri -->
+                <div class="p-5 emerald-gradient text-white">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-amber-300">Kurikulum 16 Pertemuan</span>
+                        <span id="sidebar-completion-badge" class="px-2 py-0.5 rounded-full bg-white/15 text-[11px] font-bold">4/16 Tuntas</span>
+                    </div>
+                    <h2 class="font-display font-bold text-lg">Daftar Kelas Diklat</h2>
+                    
+                    <!-- Search Kelas -->
+                    <div class="relative mt-3">
+                        <i data-lucide="search" class="w-4 h-4 text-emerald-200 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="class-search" onkeyup="renderClassList()" placeholder="Cari pertemuan / materi..." class="w-full pl-9 pr-3 py-2 text-xs bg-emerald-950/60 border border-emerald-700/70 rounded-xl text-white placeholder-emerald-300/70 focus:outline-none focus:border-amber-400">
+                    </div>
+                </div>
+
+                <!-- Scrollable List Nama Kelas -->
+                <div id="class-list-container" class="p-3 space-y-1.5 overflow-y-auto flex-1 divide-y divide-slate-100/50">
+                    <!-- Populated dynamically by JS -->
+                </div>
+
+                <!-- Kartu Profil Instruktur / Trainer Utama -->
+                <div class="p-3.5 bg-emerald-950 text-white border-t border-emerald-900 flex items-center gap-3">
+                    <img src="yt.png" onerror="this.onerror=null;this.src='https://placehold.co/100x100/064e3b/fde68a?text=AS';" alt="Dr. Ahmad Syafi'i, M.Pd." class="w-10 h-10 rounded-xl object-cover border border-amber-400 shrink-0">
+                    <div class="min-w-0">
+                        <span class="block text-[9px] font-bold uppercase tracking-wider text-amber-400">Lead Trainer Hi-TraC</span>
+                        <p class="text-xs font-bold text-white truncate">Dr. Ahmad Syafi'i, M.Pd.</p>
+                    </div>
+                </div>
+
+                <!-- Footer Etika AI Singkat -->
+                <div class="p-3.5 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-600 flex items-center gap-2.5">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-700 shrink-0"></i>
+                    <span>Wajib lampirkan <strong>Prompt Log</strong> pada setiap submit tugas.</span>
+                </div>
+            </aside>
+
+            <!-- KOLOM KANAN (8 Kolom di Desktop): ISI KELAS AKTIF -->
+            <main class="lg:col-span-8 xl:col-span-9 space-y-5 min-w-0">
+                
+                <!-- Banner Header Kelas yang Sedang Dibuka -->
+                <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <span id="active-week-badge" class="px-3 py-1 rounded-xl bg-emerald-900 text-amber-300 font-extrabold text-xs">PERTEMUAN 1</span>
+                                <span id="active-phase-badge" class="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-600 font-semibold text-xs">Fase 1: Fondasi & Perencanaan</span>
+                                <span id="active-status-pill" class="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-xs">✓ Tuntas</span>
+                            </div>
+                            <h1 id="active-class-title" class="font-display text-2xl sm:text-3xl font-bold text-slate-900">Fondasi AI & Literasi Data</h1>
+                            <p id="active-class-subtitle" class="text-xs sm:text-sm text-slate-500 mt-1">Strategi Workshop: 30% Teori Konseptual • 70% Praktik Langsung (Teacher-in-the-Loop)</p>
+                        </div>
+
+                        <!-- Quick Status Indicators for Current Class -->
+                        <div class="grid grid-cols-4 gap-2 shrink-0 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 text-center">
+                            <div class="px-2">
+                                <p class="text-[10px] text-slate-400 font-semibold uppercase">Presensi</p>
+                                <p id="ind-presensi" class="text-xs font-extrabold text-emerald-700 mt-0.5">Hadir</p>
+                            </div>
+                            <div class="px-2 border-l border-slate-200">
+                                <p class="text-[10px] text-slate-400 font-semibold uppercase">Pre-Test</p>
+                                <p id="ind-pretest" class="text-xs font-extrabold text-slate-700 mt-0.5">80</p>
+                            </div>
+                            <div class="px-2 border-l border-slate-200">
+                                <p class="text-[10px] text-slate-400 font-semibold uppercase">Post-Test</p>
+                                <p id="ind-posttest" class="text-xs font-extrabold text-slate-700 mt-0.5">95</p>
+                            </div>
+                            <div class="px-2 border-l border-slate-200">
+                                <p class="text-[10px] text-slate-400 font-semibold uppercase">Tugas</p>
+                                <p id="ind-tugas" class="text-xs font-extrabold text-emerald-700 mt-0.5">Terkirim</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigasi Sub-Menu Isi Kelas (6 Tab Komponen Belajar) -->
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
+                        <button onclick="switchClassTab('materi')" data-classtab="materi" class="class-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-emerald-800 text-white shadow-xs cursor-pointer">
+                            <i data-lucide="book-open" class="w-4 h-4"></i>
+                            <span>1. Materi & Panduan</span>
+                        </button>
+                        <button onclick="switchClassTab('video')" data-classtab="video" class="class-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">
+                            <i data-lucide="play-circle" class="w-4 h-4"></i>
+                            <span>2. Rekaman Video</span>
+                        </button>
+                        <button onclick="switchClassTab('presensi')" data-classtab="presensi" class="class-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">
+                            <i data-lucide="user-check" class="w-4 h-4"></i>
+                            <span>3. Presensi Kelas</span>
+                        </button>
+                        <button onclick="switchClassTab('pretest')" data-classtab="pretest" class="class-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">
+                            <i data-lucide="help-circle" class="w-4 h-4"></i>
+                            <span>4. Pre-Test & Post-Test</span>
+                        </button>
+                        <button onclick="switchClassTab('tugas')" data-classtab="tugas" class="class-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">
+                            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                            <span>5. Instruksi Tugas</span>
+                        </button>
+                        <button onclick="switchClassTab('submit')" data-classtab="submit" class="class-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-amber-100 text-amber-900 hover:bg-amber-200 cursor-pointer">
+                            <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                            <span>6. Submit Tugas & Prompt Log</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KONTEN DINAMIS ISI KELAS (BERDASARKAN TAB AKTIF) -->
+                <div id="class-tab-content" class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs min-h-[420px]">
+                    <!-- Populated dynamically by JS -->
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         VIEW 2: DASHBOARD TRAINER (PEMANTAUAN KETUNTASAN TUGAS & PESERTA)
+         ===================================================================== -->
+    <div id="view-trainer" class="hidden max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+        
+        <!-- Trainer Hero Banner -->
+        <div class="emerald-gradient rounded-3xl p-6 sm:p-8 text-white shadow-md flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                <div class="relative shrink-0">
+                    <img src="yt.png" onerror="this.onerror=null;this.src='https://placehold.co/160x160/064e3b/fde68a?text=Dr.+AS';" alt="Dr. Ahmad Syafi'i, M.Pd." class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-amber-400 shadow-lg">
+                    <span class="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-lg gold-gradient text-slate-950 font-extrabold text-[10px] shadow-xs">TRAINER</span>
+                </div>
+                <div>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-bold mb-2">
+                        <i data-lucide="shield" class="w-3.5 h-3.5"></i> Lead Trainer: Dr. Ahmad Syafi'i, M.Pd.
+                    </span>
+                    <h1 class="font-display text-2xl sm:text-3xl font-bold">Dashboard Monitoring Ketuntasan & Manajemen Token</h1>
+                    <p class="text-xs sm:text-sm text-emerald-100 mt-1 max-w-2xl">
+                        Selamat bertugas, <strong>Dr. Ahmad Syafi'i, M.Pd.</strong> Pantau kehadiran real-time, skor Pre-Test & Post-Test, ketuntasan produk mingguan (25%), Portofolio UTS (20%), Simulasi UAS (40%), serta kelola <strong>Token Unik Siswa</strong>.
+                    </p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 shrink-0">
+                <select id="trainer-week-filter" onchange="renderTrainerDashboard()" class="bg-slate-900 text-amber-200 border border-amber-400/40 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none">
+                    <!-- Populated by JS -->
+                </select>
+                <button onclick="exportTrainerReport()" class="px-4 py-2.5 rounded-xl gold-gradient text-slate-950 font-bold text-xs flex items-center gap-2 shadow-sm hover:opacity-95 transition cursor-pointer">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    <span>Salin Rekap Nilai</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- PANEL KEAMANAN EKSKLUSIF TRAINER (ACCESS CODE TRAINER & GENERATOR TOKEN SISWA) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <!-- Kartu Access Code Rahasia Trainer (Hanya Bisa Dilihat Trainer) -->
+            <div class="lg:col-span-5 bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 shadow-xs flex flex-col justify-between gap-4">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-[11px] font-bold">
+                            <i data-lucide="lock" class="w-3.5 h-3.5"></i> Rahasia Instruktur
+                        </span>
+                        <span class="text-[11px] text-slate-400">Hanya terlihat di sesi Trainer</span>
+                    </div>
+                    <h2 class="font-display text-lg font-bold text-white">Trainer Master Access Code</h2>
+                    <p class="text-xs text-slate-400 mt-1">Gunakan kode ini untuk masuk ke panel pengawasan kelas dan verifikasi nilai peserta.</p>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-2">
+                    <code id="trainer-secret-display" class="font-mono text-sm font-bold tracking-wider text-amber-300">••••••••••••••••</code>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="toggleTrainerSecretDisplay()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 cursor-pointer">
+                            <span id="trainer-secret-toggle-text">Lihat</span>
+                        </button>
+                        <button onclick="copyTrainerSecret()" class="px-2.5 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-xs font-bold text-white cursor-pointer">
+                            Salin
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kartu Tambah Peserta & Generate Token Unik Baru -->
+            <div class="lg:col-span-7 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between gap-4">
+                <div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Manajemen Akses Peserta</span>
+                    <h2 class="font-display text-lg font-bold text-slate-900">Terbitkan Token Unik Siswa Baru</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Setiap peserta mendapatkan token individual untuk login dan merekam progres tugasnya masing-masing.</p>
+                </div>
+
+                <form onsubmit="createNewStudentToken(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                    <input type="text" id="new-student-name" required placeholder="Nama Lengkap & Gelar Guru..." class="sm:col-span-5 px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                    <input type="text" id="new-student-school" required placeholder="Asal Sekolah / Madrasah..." class="sm:col-span-4 px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                    <button type="submit" class="sm:col-span-3 py-2.5 px-4 rounded-xl emerald-gradient text-white font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-95 transition cursor-pointer">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-amber-300"></i>
+                        <span>Buat Token</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- KPI Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Total Peserta Aktif</span>
+                    <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center"><i data-lucide="users" class="w-4 h-4"></i></div>
+                </div>
+                <p id="kpi-total-students" class="font-display text-2xl font-extrabold text-slate-900 mt-2">6 Peserta</p>
+                <p class="text-xs text-emerald-600 font-medium mt-1">Batch #04 — Terdaftar dengan Token</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Ketuntasan Tugas Kelas Ini</span>
+                    <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center"><i data-lucide="check-square" class="w-4 h-4"></i></div>
+                </div>
+                <p id="kpi-task-completion" class="font-display text-2xl font-extrabold text-slate-900 mt-2">83%</p>
+                <p id="kpi-task-sub" class="text-xs text-slate-500 mt-1">5 dari 6 peserta telah submit</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Rata-rata Peningkatan Skor</span>
+                    <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
+                </div>
+                <p id="kpi-score-gain" class="font-display text-2xl font-extrabold text-sky-700 mt-2">+24.5 Poin</p>
+                <p class="text-xs text-slate-500 mt-1">Pre-Test (65.0) → Post-Test (89.5)</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Kepatuhan Prompt Log</span>
+                    <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center"><i data-lucide="file-check" class="w-4 h-4"></i></div>
+                </div>
+                <p class="font-display text-2xl font-extrabold text-slate-900 mt-2">100%</p>
+                <p class="text-xs text-emerald-600 font-medium mt-1">Sesuai Etika AI Hi-TraC</p>
+            </div>
+        </div>
+
+        <!-- Monitoring Table & Inspector -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 id="trainer-table-title" class="font-display text-lg font-bold text-slate-900">Rekap Ketuntasan Peserta — Minggu 1</h2>
+                    <p class="text-xs text-slate-500">Klik tombol <strong>"Periksa Karya & Prompt Log"</strong> untuk memvalidasi tugas dan memberikan nilai.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sinkron dengan Portal Siswa
+                    </span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                            <th class="py-3.5 px-5">Nama Guru / Peserta</th>
+                            <th class="py-3.5 px-4">Token Unik Login</th>
+                            <th class="py-3.5 px-4">Presensi</th>
+                            <th class="py-3.5 px-4">Pre-Test</th>
+                            <th class="py-3.5 px-4">Post-Test</th>
+                            <th class="py-3.5 px-4">Status Tugas & Prompt Log</th>
+                            <th class="py-3.5 px-4">Progres 16 Minggu</th>
+                            <th class="py-3.5 px-5 text-right">Aksi Trainer</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trainer-students-tbody" class="divide-y divide-slate-100 text-xs">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    </div> <!-- End #app-shell -->
+
+    <!-- Modal Inspeksi Tugas & Prompt Log oleh Trainer -->
+    <div id="trainer-inspect-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs">
+        <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-slate-200">
+            <div class="emerald-gradient p-5 text-white flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-300">Audit Karya & Etika AI</span>
+                    <h3 id="inspect-student-name" class="font-display text-lg font-bold">Nama Peserta</h3>
+                </div>
+                <button onclick="closeInspectModal()" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="inspect-modal-body" class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+                <!-- Populated dynamically -->
+            </div>
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-bold text-slate-700">Nilai Tugas (0–100):</label>
+                    <input type="number" id="inspect-grade-input" min="0" max="100" value="95" class="w-20 px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900">
+                </div>
+                <button onclick="approveStudentSubmission()" class="px-5 py-2.5 rounded-xl emerald-gradient text-white font-bold text-xs hover:opacity-95 transition cursor-pointer">
+                    Verifikasi & Simpan Nilai
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. DATA KURIKULUM 16 MINGGU (HI-TRAC WORKFLOW)
+        // ==========================================
+        const curriculumData = [
+            {
+                week: 1,
+                phase: 'Fase 1: Fondasi & Perencanaan',
+                title: 'Fondasi AI & Literasi Data',
+                submateri: 'Sejarah singkat AI, jenis-jenis AI (Generative vs Discriminative), dan mindset "Teacher-in-the-loop".',
+                tools: ['ChatGPT', 'Claude', 'Gemini'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 1: Paradigma Teacher-in-the-Loop & Cara Kerja LLM',
+                videoDuration: '42 Menit',
+                guidePoints: [
+                    'Memahami perbedaan AI Diskriminatif (klasifikasi/prediksi) dan AI Generatif (pencipta teks, gambar, audio).',
+                    'Menerapkan prinsip Teacher-in-the-loop: Guru adalah pengambil keputusan pedagogis, AI adalah asisten draf awal.',
+                    'Mengenali risiko halusinasi AI dan teknik verifikasi fakta berbasis referensi kurikulum.'
+                ],
+                quizQuestion: {
+                    q: 'Apa makna utama dari mindset "Teacher-in-the-loop" dalam pemanfaatan AI di pendidikan?',
+                    options: [
+                        'Menyerahkan seluruh pembuatan nilai dan RPP tanpa koreksi kepada AI',
+                        'Guru tetap memegang kendali penuh untuk memverifikasi, mengkurasi, dan menyesuaikan output AI',
+                        'Melarang siswa dan guru membuka aplikasi AI di lingkungan sekolah'
+                    ],
+                    correct: 1
+                },
+                taskInstruction: 'Lakukan eksperimen komparasi respons antara 2 model AI Generatif pada satu topik mata pelajaran Anda, lalu tuliskan analisis kritis akurasinya.'
+            },
+            {
+                week: 2,
+                phase: 'Fase 1: Fondasi & Perencanaan',
+                title: 'Seni Bertanya (Prompt Engineering)',
+                submateri: 'Teknik Mega-Prompting, kerangka R-C-S (Role, Context, Specificity) untuk guru.',
+                tools: ['R-C-S Framework', 'Prompt Studio'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 2: Anatomi Mega-Prompt R-C-S untuk Kebutuhan Pedagogis',
+                videoDuration: '48 Menit',
+                guidePoints: [
+                    'Role (Peran): Menetapkan persona spesifik (misal: Pakar Kurikulum Merdeka & Desainer Instruksional).',
+                    'Context (Konteks): Menjelaskan jenjang kelas, karakteristik peserta didik, dan alokasi waktu.',
+                    'Specificity (Spesifisitas): Menentukan format output (tabel, poin, rubrik) dan batasan pedagogis.'
+                ],
+                quizQuestion: {
+                    q: 'Komponen huruf "C" dalam kerangka prompting R-C-S untuk guru merujuk pada...',
+                    options: [
+                        'Copywriting',
+                        'Context (Konteks kelas, jenjang siswa, dan situasi belajar)',
+                        'Coding'
+                    ],
+                    correct: 1
+                },
+                taskInstruction: 'Susun 3 variasi Mega-Prompt menggunakan kerangka R-C-S untuk merancang skenario pembelajaran di kelas Anda dan dokumentasikan perbedaannya.'
+            },
+            {
+                week: 3,
+                phase: 'Fase 1: Fondasi & Perencanaan',
+                title: 'AI untuk Perencanaan I (CP & ATP)',
+                submateri: 'Menyusun Capaian Pembelajaran (CP) dan Alur Tujuan Pembelajaran (ATP) menggunakan AI.',
+                tools: ['Claude', 'ChatGPT'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 3: Menurunkan CP menjadi ATP Terstruktur dengan Bantuan AI',
+                videoDuration: '50 Menit',
+                guidePoints: [
+                    'Menganalisis elemen Capaian Pembelajaran (CP) sesuai fase perkembangan siswa.',
+                    'Menggunakan AI untuk memecah CP menjadi Tujuan Pembelajaran (TP) yang terukur (ABCD/Taksonomi Bloom).',
+                    'Mengurutkan TP menjadi Alur Tujuan Pembelajaran (ATP) lintas semester beserta estimasi Jam Pelajaran (JP).'
+                ],
+                quizQuestion: {
+                    q: 'Langkah penting setelah AI menghasilkan draf Alur Tujuan Pembelajaran (ATP) adalah...',
+                    options: [
+                        'Langsung mencetak tanpa membaca ulang',
+                        'Menyelaraskan urutan materi dan alokasi JP dengan kalender akademik sekolah',
+                        'Menghapus seluruh tujuan pembelajaran yang sulit'
+                    ],
+                    correct: 1
+                },
+                taskInstruction: 'Hasilkan dokumen pemetaan CP ke ATP untuk 1 semester lengkap dalam bentuk tabel terstruktur beserta lampiran Prompt Log.'
+            },
+            {
+                week: 4,
+                phase: 'Fase 1: Fondasi & Perencanaan',
+                title: 'AI untuk Perencanaan II (Modul Ajar)',
+                submateri: 'Membuat Modul Ajar/RPP lengkap dengan skenario pembelajaran terdiferensiasi.',
+                tools: ['ChatGPT', 'Gemini', 'MagicSchool AI'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 4: Merancang Modul Ajar Berdiferensiasi (Konten, Proses, Produk)',
+                videoDuration: '55 Menit',
+                guidePoints: [
+                    'Mengintegrasikan langkah pembelajaran bermakna (Pendahuluan, Inti, Penutup) berbasis PjBL/Inkuiri.',
+                    'Meminta AI merancang 3 jalur diferensiasi (visual, auditori, kinestetik / kesiapan belajar).',
+                    'Menyusun Lembar Kerja Peserta Didik (LKPD) yang kontekstual.'
+                ],
+                quizQuestion: {
+                    q: 'Diferensiasi pembelajaran yang dapat dirancang menggunakan bantuan AI mencakup tiga aspek utama, yaitu...',
+                    options: [
+                        'Konten, Proses, dan Produk',
+                        'Harga, Lokasi, dan Promosi',
+                        'Hardware, Software, dan Brainware'
+                    ],
+                    correct: 0
+                },
+                taskInstruction: 'Susun 1 Modul Ajar / RPP lengkap untuk 1 pertemuan (2x45 menit) yang memuat skenario diferensiasi dan LKPD.'
+            },
+            {
+                week: 5,
+                phase: 'Fase 2: Media & Engagement',
+                title: 'Visualisasi Materi & Slide Otomatis',
+                submateri: 'Membuat slide presentasi otomatis (Gamma.app, Canva Magic Design) dan infografis AI.',
+                tools: ['Gamma.app', 'Canva Magic Design'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 5: Transformasi Naskah Ajar Menjadi Deck Presentasi Visual',
+                videoDuration: '45 Menit',
+                guidePoints: [
+                    'Mengubah kerangka Modul Ajar menjadi struktur slide yang ringkas dan padat visual.',
+                    'Menggunakan Gamma.app untuk menyusun deck interaktif beserta tata letak otomatis.',
+                    'Mengedit ilustrasi dan tipografi di Canva Magic Design agar ramah baca di proyektor kelas.'
+                ],
+                quizQuestion: {
+                    q: 'Keunggulan utama penggunaan Gamma.app dalam persiapan mengajar adalah...',
+                    options: [
+                        'Menghasilkan struktur slide dan tata letak visual otomatis dari kerangka materi',
+                        'Menggantikan kehadiran guru saat menjelaskan di depan kelas',
+                        'Menghitung nilai rapor akhir semester secara otomatis'
+                    ],
+                    correct: 0
+                },
+                taskInstruction: 'Buat minimal 8 slide presentasi pembelajaran interaktif menggunakan Gamma.app atau Canva Magic Design dan kumpulkan tautannya.'
+            },
+            {
+                week: 6,
+                phase: 'Fase 2: Media & Engagement',
+                title: 'Ice Breaking & Engagement I',
+                submateri: 'AI untuk membuat game edukasi, teka-teki, dan skenario roleplay interaktif.',
+                tools: ['ChatGPT', 'Wordwall', 'Character.ai'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 6: Gamifikasi Kelas & Simulasi Roleplay Tokoh Sejarah/Sains',
+                videoDuration: '47 Menit',
+                guidePoints: [
+                    'Merancang kuis tebak konsep, teka-teki silang, dan misi kelompok berbatas waktu.',
+                    'Membangun skenario simulasi roleplay berbasis teks untuk melatih empati dan pemecahan masalah siswa.',
+                    'Menyesuaikan tingkat kesulitan permainan dengan usia peserta didik.'
+                ],
+                quizQuestion: {
+                    q: 'Tujuan utama pemanfaatan skenario roleplay berbasis AI pada awal pembelajaran adalah...',
+                    options: [
+                        'Meningkatkan keterlibatan aktif (engagement) dan rasa ingin tahu siswa terhadap topik',
+                        'Menghabiskan waktu pelajaran agar tidak ada tugas',
+                        'Menguji kecepatan mengetik siswa'
+                    ],
+                    correct: 0
+                },
+                taskInstruction: 'Rancang 1 aktivitas Ice Breaking / Game Edukasi atau skenario Roleplay interaktif siap pakai untuk pembuka kelas.'
+            },
+            {
+                week: 7,
+                phase: 'Fase 2: Media & Engagement',
+                title: 'Ice Breaking & Engagement II (Audio & Avatar)',
+                submateri: 'Pemanfaatan AI untuk musik/audio (Suno/Udio) dan avatar guru sebagai pembuka kelas.',
+                tools: ['Suno AI', 'Udio', 'HeyGen / D-ID'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 7: Menciptakan Lagu Pembelajaran & Video Avatar Pembuka Kelas',
+                videoDuration: '44 Menit',
+                guidePoints: [
+                    'Menulis lirik lagu hafalan konsep (mnemonik) menggunakan LLM lalu mengubahnya menjadi lagu di Suno/Udio.',
+                    'Membuat video pengantar apersepsi berdurasi 60 detik menggunakan avatar digital.',
+                    'Memastikan etika penggunaan suara dan wajah digital tetap menjaga wibawa pendidik.'
+                ],
+                quizQuestion: {
+                    q: 'Pemanfaatan Suno AI atau Udio dalam pembelajaran paling efektif digunakan untuk...',
+                    options: [
+                        'Mengubah ringkasan konsep penting menjadi lagu edukatif yang mudah diingat siswa',
+                        'Membuat soal ujian pilihan ganda',
+                        'Mendeteksi plagiarisme skripsi'
+                    ],
+                    correct: 0
+                },
+                taskInstruction: 'Hasilkan 1 karya audio/lagu pembelajaran (Suno/Udio) atau video avatar apersepsi berdurasi maksimal 90 detik.'
+            },
+            {
+                week: 8,
+                phase: 'Fase 2: Media & Engagement',
+                title: 'UTS: Portofolio Perencanaan Pembelajaran Digital',
+                submateri: 'Proyek Tengah Semester (Bobot 20%): Kompilasi terpadu CP, ATP, Modul Ajar, dan Media Visual.',
+                tools: ['Google Sites', 'Notion', 'Canva'],
+                isMilestone: true,
+                videoTitle: 'Panduan Evaluasi UTS: Kurasi Portofolio Digital & Audit Prompt Log',
+                videoDuration: '35 Menit',
+                guidePoints: [
+                    'Menggabungkan produk Minggu 1–7 menjadi satu kesatuan perangkat ajar yang utuh dan koheren.',
+                    'Menyertakan dokumentasi lengkap seluruh Prompt Log dari setiap tahapan perencanaan.',
+                    'Menuliskan refleksi pribadi mengenai efisiensi waktu dan kualitas pedagogis.'
+                ],
+                quizQuestion: {
+                    q: 'Berapa bobot penilaian Proyek Portofolio Digital (UTS) dalam struktur evaluasi Hi-TraC?',
+                    options: [
+                        '10%',
+                        '20%',
+                        '40%'
+                    ],
+                    correct: 1
+                },
+                taskInstruction: 'Kumpulkan tautan Portofolio Digital UTS (Google Sites / Notion / Drive terstruktur) yang memuat seluruh perangkat ajar & Prompt Log.'
+            },
+            {
+                week: 9,
+                phase: 'Fase 3: Asesmen & Umpan Balik',
+                title: 'Asesmen Diagnostik & Pemetaan Siswa',
+                submateri: 'Menggunakan AI untuk memetakan kemampuan awal siswa dan gaya belajar.',
+                tools: ['Google Forms + AI', 'ChatGPT'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 9: Analisis Cepat Hasil Asesmen Awal untuk Pengelompokan Siswa',
+                videoDuration: '46 Menit',
+                guidePoints: [
+                    'Menyusun instrumen survei diagnostik kognitif dan non-kognitif.',
+                    'Mengolah rekap data anonim siswa untuk memetakan kelompok kesiapan belajar (dasar, menengah, mahir).',
+                    'Menjaga privasi data siswa (tidak mengunggah nama lengkap/NIK ke platform AI publik).'
+                ],
+                quizQuestion: {
+                    q: 'Prinsip keamanan data yang wajib dipatuhi saat menganalisis hasil diagnostik siswa dengan AI adalah...',
+                    options: [
+                        'Mengunggah seluruh biodata lengkap dan nomor telepon orang tua',
+                        'Melakukan anonimisasi data identitas pribadi siswa sebelum diproses AI',
+                        'Membagikan hasil diagnostik ke media sosial'
+                    ],
+                    correct: 1
+                },
+                taskInstruction: 'Buat instrumen asesmen diagnostik beserta contoh simulasi pengelompokan strategi belajar berdasarkan hasil analisis AI.'
+            },
+            {
+                week: 10,
+                phase: 'Fase 3: Asesmen & Umpan Balik',
+                title: 'Asesmen Formatif Aktif & Kuis Instan',
+                submateri: 'Membuat kuis instan (Quizizz AI, Curipod) dan kegiatan refleksi otomatis.',
+                tools: ['Quizizz AI', 'Curipod'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 10: Membangun Kuis Interaktif Real-Time & Exit Ticket Otomatis',
+                videoDuration: '43 Menit',
+                guidePoints: [
+                    'Mengonversi materi ajar menjadi kuis interaktif langsung di Quizizz AI.',
+                    'Merancang aktivitas refleksi cepat (Exit Ticket) dan awan kata di Curipod.',
+                    'Menganalisis butir soal yang paling banyak dijawab salah untuk tindak lanjut segera.'
+                ],
+                quizQuestion: {
+                    q: 'Fungsi utama asesmen formatif aktif menggunakan Quizizz AI atau Curipod adalah...',
+                    options: [
+                        'Menentukan kelulusan akhir sekolah',
+                        'Mengecek pemahaman siswa secara langsung selama proses belajar berlangsung',
+                        'Menggantikan ujian nasional'
+                    ],
+                    correct: 1
+                },
+                taskInstruction: 'Buat 1 set kuis formatif interaktif (minimal 10 butir) di Quizizz AI atau Curipod dan bagikan tautan pratinjaunya.'
+            },
+            {
+                week: 11,
+                phase: 'Fase 3: Asesmen & Umpan Balik',
+                title: 'Asesmen Sumatif & Bank Soal HOTS',
+                submateri: 'Pembuatan soal HOTS (Higher Order Thinking Skills) dan kunci jawaban otomatis.',
+                tools: ['Claude', 'ChatGPT'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 11: Teknik Prompting Stimulus Studi Kasus untuk Soal C4–C6',
+                videoDuration: '52 Menit',
+                guidePoints: [
+                    'Menyusun stimulus berbasis kasus nyata, grafik, atau fenomena kontekstual.',
+                    'Mengarahkan AI menyusun soal level kognitif C4 (Analisis), C5 (Evaluasi), dan C6 (Kreasi).',
+                    'Memvalidasi kunci jawaban dan pengecoh (distractor) agar tidak ambigu.'
+                ],
+                quizQuestion: {
+                    q: 'Ciri utama soal HOTS (Higher Order Thinking Skills) yang baik adalah...',
+                    options: [
+                        'Hanya menanyakan hafalan definisi kata per kata',
+                        'Diawali stimulus kontekstual dan menuntut kemampuan analisis, evaluasi, atau kreasi (C4–C6)',
+                        'Memiliki lebih dari satu jawaban benar tanpa alasan'
+                    ],
+                    correct: 1
+                },
+                taskInstruction: 'Susun 5 soal HOTS (Pilihan Ganda Kompleks / Uraian Studi Kasus) lengkap dengan kisi-kisi, stimulus, dan kunci jawaban.'
+            },
+            {
+                week: 12,
+                phase: 'Fase 3: Asesmen & Umpan Balik',
+                title: 'Rubrik Penilaian & Umpan Balik Naratif',
+                submateri: 'Membuat rubrik penilaian yang detail dan memberikan feedback naratif otomatis untuk siswa.',
+                tools: ['MagicSchool AI', 'ChatGPT'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 12: Konstruksi Rubrik Analitik & Umpan Balik Konstruktif Personal',
+                videoDuration: '45 Menit',
+                guidePoints: [
+                    'Menyusun rubrik analitik dengan kriteria jelas dan skala tingkat penguasaan (1–4).',
+                    'Menggunakan AI untuk menyusun draf umpan balik naratif yang memotivasi dan spesifik.',
+                    'Meninjau kembali nada bahasa agar tetap empatik dan membangun.'
+                ],
+                quizQuestion: {
+                    q: 'Manfaat penggunaan rubrik penilaian analitik berbasis AI bagi guru dan siswa adalah...',
+                    options: [
+                        'Objektivitas penilaian meningkat dan siswa mengetahui indikator capaian secara transparan',
+                        'Guru tidak perlu membaca hasil kerja siswa sama sekali',
+                        'Semua siswa otomatis mendapat nilai 100'
+                    ],
+                    correct: 0
+                },
+                taskInstruction: 'Buat 1 rubrik penilaian proyek lengkap beserta 3 contoh umpan balik naratif personal untuk kategori capaian berbeda.'
+            },
+            {
+                week: 13,
+                phase: 'Fase 4: Administrasi, Etika & UAS',
+                title: 'AI untuk Administrasi & Komunikasi Guru',
+                submateri: 'Otomatisasi laporan perkembangan siswa, email orang tua, dan manajemen waktu.',
+                tools: ['Gemini Workspace', 'ChatGPT'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 13: Efisiensi Administrasi Wali Kelas & Surat Komunikasi Orang Tua',
+                videoDuration: '40 Menit',
+                guidePoints: [
+                    'Menyusun draf narasi catatan wali kelas pada rapor secara sistematis.',
+                    'Membuat templat komunikasi profesional dan empatik kepada orang tua/wali murid.',
+                    'Menyusun jadwal kerja mingguan guru agar beban administratif berkurang drastis.'
+                ],
+                quizQuestion: {
+                    q: 'Dalam menyusun komunikasi kepada orang tua menggunakan AI, hal yang paling perlu diperhatikan guru adalah...',
+                    options: [
+                        'Menggunakan bahasa teknis komputer yang rumit',
+                        'Memastikan nada komunikasi empatik, santun, dan sesuai fakta perkembangan siswa',
+                        'Mengirim pesan tanpa membaca ulang isinya'
+                    ],
+                    correct: 1
+                },
+                taskInstruction: 'Susun 2 draf narasi laporan perkembangan siswa dan 1 templat surat komunikasi wali murid menggunakan kerangka R-C-S.'
+            },
+            {
+                week: 14,
+                phase: 'Fase 4: Administrasi, Etika & UAS',
+                title: 'Integritas Akademik & Deteksi AI',
+                submateri: 'Menghadapi tantangan plagiarisme, cara mendeteksi teks AI, dan kebijakan penggunaan AI di kelas.',
+                tools: ['GPTZero', 'Turnitin AI', 'Kebijakan Kelas'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 14: Menjaga Kejujuran Akademik & Menyusun Kontrak Belajar AI',
+                videoDuration: '49 Menit',
+                guidePoints: [
+                    'Memahami keterbatasan alat detektor AI (potensi false positive) sehingga tidak dijadikan satu-satunya bukti.',
+                    'Merancang jenis tugas yang menuntut penalaran personal dan presentasi lisan.',
+                    'Menyusun aturan main (AI Policy) yang jelas bagi siswa di kelas.'
+                ],
+                quizQuestion: {
+                    q: 'Sikap paling bijak ketika alat detektor AI menunjukkan indikasi tinggi pada tugas siswa adalah...',
+                    options: [
+                        'Langsung menghukum siswa tanpa klarifikasi',
+                        'Melakukan dialog klarifikasi, memeriksa riwayat revisi dokumen, dan menguji pemahaman lisan siswa',
+                        'Mengabaikan seluruh aturan integritas akademik'
+                    ],
+                    correct: 1
+                },
+                taskInstruction: 'Rancang 1 dokumen "Kebijakan Penggunaan AI di Kelas" (1 halaman) yang siap ditempel atau dibagikan kepada siswa.'
+            },
+            {
+                week: 15,
+                phase: 'Fase 4: Administrasi, Etika & UAS',
+                title: 'Review & Pameran Karya (Showcase)',
+                submateri: 'Demonstrasi alat AI favorit peserta yang paling berdampak pada efisiensi kerja.',
+                tools: ['Peer Review', 'Showcase Studio'],
+                isMilestone: false,
+                videoTitle: 'Rekaman Sesi 15: Berbagi Praktik Baik & Persiapan Simulasi Microteaching UAS',
+                videoDuration: '55 Menit',
+                guidePoints: [
+                    'Mempresentasikan alur kerja (workflow) AI favorit yang terbukti menghemat waktu persiapan mengajar.',
+                    'Memberikan umpan balik sejawat (peer review) terhadap perangkat ajar rekan peserta.',
+                    'Melakukan gladi bersih teknis untuk simulasi mengajar Full Cycle di Minggu ke-16.'
+                ],
+                quizQuestion: {
+                    q: 'Fokus utama kegiatan Pameran Karya (Showcase) pada Pertemuan 15 adalah...',
+                    options: [
+                        'Berbagi praktik baik efisiensi kerja dan saling memberi masukan konstruktif',
+                        'Membeli perangkat keras komputer baru',
+                        'Menghafal sejarah penemuan internet'
+                    ],
+                    correct: 0
+                },
+                taskInstruction: 'Unggah ringkasan 1 halaman "Alur Kerja AI Favorit Saya" beserta tautan persiapan skenario UAS.'
+            },
+            {
+                week: 16,
+                phase: 'Fase 4: Administrasi, Etika & UAS',
+                title: 'UAS: Simulasi Mengajar AI Full Cycle',
+                submateri: 'Proyek Akhir (Bobot 40%): Praktik mengajar di depan kelas dengan memanfaatkan minimal 3 alat AI berbeda.',
+                tools: ['Min. 3 Alat AI Terintegrasi', 'Full Prompt Log'],
+                isMilestone: true,
+                videoTitle: 'Panduan UAS: Rubrik Penilaian Simulasi Microteaching Integrasi AI Full Cycle',
+                videoDuration: '40 Menit',
+                guidePoints: [
+                    'Mengintegrasikan minimal 3 alat AI berbeda dalam satu siklus utuh (Perencanaan, Media/Ice Breaking, dan Asesmen).',
+                    'Menunjukkan peran aktif guru sebagai fasilitator utama (Teacher-in-the-loop) selama simulasi.',
+                    'Menyerahkan kompilasi lengkap Prompt Log seluruh alat AI yang digunakan.'
+                ],
+                quizQuestion: {
+                    q: 'Syarat minimal pemanfaatan alat AI dalam Proyek Akhir Simulasi Mengajar (UAS) adalah...',
+                    options: [
+                        'Minimal 1 alat AI saja',
+                        'Minimal 3 alat AI berbeda yang terintegrasi dalam satu siklus pembelajaran',
+                        'Tidak boleh menggunakan alat AI sama sekali'
+                    ],
+                    correct: 1
+                },
+                taskInstruction: 'Kumpulkan tautan rekaman/skenario Simulasi Mengajar Full Cycle (minimal 3 alat AI) beserta dokumen lengkap Prompt Log.'
+            }
+        ];
+
+        // ==========================================
+        // 2. KONFIGURASI KEAMANAN (TOKEN SISWA & ACCESS CODE TRAINER)
+        // ==========================================
+        const TRAINER_ACCESS_CODE = 'HITRAC-MASTER-2026';
+        let trainerSecretVisible = false;
+
+        let currentRole = null; // 'student' | 'trainer' | null
+        let activeStudentToken = null;
+        let activeWeek = 1;
+        let activeClassTab = 'materi'; // 'materi' | 'video' | 'presensi' | 'pretest' | 'tugas' | 'submit'
+
+        // Database Seluruh Peserta Berbasis Token Unik (Tersimpan di LocalStorage)
+        const defaultStudentsRegistry = {
+            'HTR-01-FAUZI': {
+                token: 'HTR-01-FAUZI',
+                name: 'Ust. Ahmad Fauzi, S.Pd.',
+                school: 'SMA Al Hikmah Surabaya',
+                progressByWeek: {
+                    1: { present: true, preScore: 70, postScore: 100, submitted: true, link: 'https://docs.google.com/document/d/tugas-m1-fauzi', promptLog: 'ROLE: Pakar Literasi AI Pendidikan...\nCONTEXT: Kelas X SMA...\nSPECIFICITY: Bandingkan akurasi penjelasan konsep fotosintesis.', note: 'Output telah diverifikasi dengan buku teks Kemendikbud.', grade: 96 },
+                    2: { present: true, preScore: 65, postScore: 100, submitted: true, link: 'https://docs.google.com/document/d/rcs-prompt-m2', promptLog: 'ROLE: Desainer Instruksional...\nCONTEXT: 32 Siswa SMA...\nSPECIFICITY: Susun 3 variasi Mega-Prompt R-C-S.', note: 'Prompt diuji coba langsung di Claude & ChatGPT.', grade: 94 },
+                    3: { present: true, preScore: 75, postScore: 100, submitted: true, link: 'https://docs.google.com/spreadsheets/d/cp-atp-m3', promptLog: 'ROLE: Pengembang Silabus Kurikulum Merdeka...\nCONTEXT: Fase E...\nSPECIFICITY: Turunkan CP ke 5 ATP dalam tabel.', note: 'Alokasi JP disesuaikan kalender akademik.', grade: 95 },
+                    4: { present: true, preScore: 80, postScore: 100, submitted: true, link: 'https://docs.google.com/document/d/modul-ajar-m4', promptLog: 'ROLE: Guru Penggerak...\nCONTEXT: Diferensiasi gaya belajar...\nSPECIFICITY: Buat Modul Ajar + LKPD.', note: 'LKPD disesuaikan untuk siswa tanpa gawai.', grade: 98 }
+                }
+            },
+            'HTR-02-RAHMA': {
+                token: 'HTR-02-RAHMA',
+                name: 'Ustzh. Siti Rahmawati, M.Pd.',
+                school: 'SMP Al Hikmah Surabaya',
+                progressByWeek: {
+                    1: { present: true, preScore: 75, postScore: 95, submitted: true, link: 'https://gamma.app/docs/presentasi-rahma', promptLog: 'ROLE: Guru IPA SMP...\nCONTEXT: Materi Ekosistem...\nSPECIFICITY: Buat 8 slide visual interaktif.', note: 'Gambar disesuaikan untuk siswa kelas VII.', grade: 95 },
+                    2: { present: true, preScore: 80, postScore: 100, submitted: true, link: 'https://docs.google.com/document/d/rahma-m2', promptLog: 'ROLE: Pakar Pedagogi...\nCONTEXT: SMP Fase D...\nSPECIFICITY: Susun Mega-Prompt R-C-S.', note: 'Teruji dengan hasil sangat akurat.', grade: 96 }
+                }
+            },
+            'HTR-03-BUDI': {
+                token: 'HTR-03-BUDI',
+                name: 'Budi Santoso, S.Pd., Gr.',
+                school: 'SMK Telkom',
+                progressByWeek: {
+                    1: { present: true, preScore: 60, postScore: 90, submitted: true, link: 'https://sites.google.com/view/portofolio-budi', promptLog: 'ROLE: Asesor HOTS...\nCONTEXT: Kelas XI...\nSPECIFICITY: Buat 5 soal studi kasus C4-C6.', note: 'Disesuaikan dengan standar kompetensi keahlian.', grade: 92 }
+                }
+            },
+            'HTR-04-NURUL': {
+                token: 'HTR-04-NURUL',
+                name: 'Nurul Hidayah, S.Si.',
+                school: 'MA Unggulan',
+                progressByWeek: {
+                    1: { present: true, preScore: 70, postScore: 90, submitted: true, link: 'https://notion.so/modul-nurul', promptLog: 'ROLE: Pakar Kurikulum...\nCONTEXT: Kimia Fase F...\nSPECIFICITY: Pemetaan ATP semester ganjil.', note: 'Sudah diselaraskan dengan kalender madrasah.', grade: 90 }
+                }
+            },
+            'HTR-05-HENDRA': {
+                token: 'HTR-05-HENDRA',
+                name: 'Hendra Wijaya, S.Kom.',
+                school: 'SMP Islam Terpadu',
+                progressByWeek: {
+                    1: { present: true, preScore: 80, postScore: 95, submitted: false, link: '', promptLog: '', note: '', grade: null }
+                }
+            },
+            'HTR-06-DEWI': {
+                token: 'HTR-06-DEWI',
+                name: 'Dewi Kartika, S.Pd.',
+                school: 'SD Al Hikmah',
+                progressByWeek: {
+                    1: { present: false, preScore: 65, postScore: 85, submitted: true, link: 'https://canva.com/design/media-dewi', promptLog: 'ROLE: Guru SD Fase B...\nCONTEXT: Literasi Numerasi...\nSPECIFICITY: Buat kuis teka-teki berhitung.', note: 'Bahasa disederhanakan untuk usia 8-9 tahun.', grade: 89 }
+                }
+            }
+        };
+
+        let studentsRegistry = JSON.parse(localStorage.getItem('hitrac_students_registry_v3')) || defaultStudentsRegistry;
+        let inspectingTarget = null;
+
+        function getActiveStudent() {
+            return studentsRegistry[activeStudentToken] || Object.values(studentsRegistry)[0];
+        }
+
+        function saveRegistry() {
+            localStorage.setItem('hitrac_students_registry_v3', JSON.stringify(studentsRegistry));
+            if (currentRole === 'student') {
+                updateGlobalProgressBadges();
+            }
+        }
+
+        // ==========================================
+        // 3. INISIALISASI & SISTEM AUTENTIKASI (LOGIN GATE)
+        // ==========================================
+        window.onload = function () {
+            populateTrainerWeekFilter();
+            // Cek apakah ada sesi aktif sebelumnya
+            const savedSession = JSON.parse(sessionStorage.getItem('hitrac_active_session') || 'null');
+            if (savedSession) {
+                if (savedSession.role === 'trainer') {
+                    enterTrainerPortal();
+                } else if (savedSession.role === 'student' && studentsRegistry[savedSession.token]) {
+                    enterStudentPortal(savedSession.token);
+                }
+            }
+            lucide.createIcons();
+        };
+
+        function switchAuthTab(tab) {
+            const tabStudent = document.getElementById('auth-tab-student');
+            const tabTrainer = document.getElementById('auth-tab-trainer');
+            const formStudent = document.getElementById('form-login-student');
+            const formTrainer = document.getElementById('form-login-trainer');
+
+            if (tab === 'student') {
+                tabStudent.className = 'py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 emerald-gradient text-white shadow-xs transition cursor-pointer';
+                tabTrainer.className = 'py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 text-slate-400 hover:text-white transition cursor-pointer';
+                formStudent.classList.remove('hidden');
+                formTrainer.classList.add('hidden');
+            } else {
+                tabTrainer.className = 'py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 gold-gradient text-slate-950 shadow-xs transition cursor-pointer';
+                tabStudent.className = 'py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 text-slate-400 hover:text-white transition cursor-pointer';
+                formTrainer.classList.remove('hidden');
+                formStudent.classList.add('hidden');
+            }
+        }
+
+        function fillStudentToken(token) {
+            document.getElementById('input-student-token').value = token;
+        }
+
+        function fillTrainerCode() {
+            document.getElementById('input-trainer-code').value = TRAINER_ACCESS_CODE;
+        }
+
+        function toggleAuthCodeVisibility() {
+            const input = document.getElementById('input-trainer-code');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function handleStudentLogin(e) {
+            e.preventDefault();
+            const rawToken = document.getElementById('input-student-token').value.trim().toUpperCase();
+            if (!studentsRegistry[rawToken]) {
+                showToast('Token tidak valid atau belum terdaftar! Hubungi Trainer Hi-TraC.');
+                return;
+            }
+            sessionStorage.setItem('hitrac_active_session', JSON.stringify({ role: 'student', token: rawToken }));
+            enterStudentPortal(rawToken);
+            showToast(`Selamat datang, ${studentsRegistry[rawToken].name}!`);
+        }
+
+        function handleTrainerLogin(e) {
+            e.preventDefault();
+            const code = document.getElementById('input-trainer-code').value.trim();
+            if (code !== TRAINER_ACCESS_CODE) {
+                showToast('Access Code Trainer salah! Akses ditolak.');
+                return;
+            }
+            sessionStorage.setItem('hitrac_active_session', JSON.stringify({ role: 'trainer' }));
+            enterTrainerPortal();
+            showToast('Autentikasi Trainer berhasil! Akses kontrol penuh aktif.');
+        }
+
+        function enterStudentPortal(token) {
+            currentRole = 'student';
+            activeStudentToken = token;
+            const student = getActiveStudent();
+
+            document.getElementById('auth-gate').classList.add('hidden');
+            document.getElementById('app-shell').classList.remove('hidden');
+            document.getElementById('view-student').classList.remove('hidden');
+            document.getElementById('view-trainer').classList.add('hidden');
+
+            document.getElementById('header-role-badge').textContent = 'Portal Peserta';
+            document.getElementById('header-role-badge').className = 'px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-800/90 text-emerald-200 border border-emerald-600/50';
+            document.getElementById('header-user-name').textContent = student.name;
+            const tokenPill = document.getElementById('header-token-pill');
+            tokenPill.textContent = student.token;
+            tokenPill.classList.remove('hidden');
+
+            const initials = student.name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+            const avatarEl = document.getElementById('header-user-avatar');
+            avatarEl.innerHTML = initials;
+            avatarEl.className = 'w-10 h-10 rounded-xl gold-gradient text-slate-950 font-extrabold text-xs flex items-center justify-center shadow-xs shrink-0 overflow-hidden border border-amber-400/60';
+
+            updateGlobalProgressBadges();
+            renderClassList();
+            selectWeek(activeWeek);
+            lucide.createIcons();
+        }
+
+        function enterTrainerPortal() {
+            currentRole = 'trainer';
+            activeStudentToken = null;
+            trainerSecretVisible = false;
+
+            document.getElementById('auth-gate').classList.add('hidden');
+            document.getElementById('app-shell').classList.remove('hidden');
+            document.getElementById('view-student').classList.add('hidden');
+            document.getElementById('view-trainer').classList.remove('hidden');
+
+            document.getElementById('header-role-badge').textContent = 'Dashboard Trainer';
+            document.getElementById('header-role-badge').className = 'px-2.5 py-0.5 text-[10px] font-bold rounded-full gold-gradient text-slate-950';
+            document.getElementById('header-user-name').textContent = "Dr. Ahmad Syafi'i, M.Pd.";
+            document.getElementById('header-token-pill').classList.add('hidden');
+            document.getElementById('header-user-role').innerHTML = `Lead Trainer Hi-TraC • <span class="font-bold text-amber-300">Hak Akses Penuh</span>`;
+            const avatarEl = document.getElementById('header-user-avatar');
+            avatarEl.innerHTML = `<img src="yt.png" onerror="this.onerror=null;this.src='https://placehold.co/100x100/064e3b/fde68a?text=AS';" alt="Dr. Ahmad Syafi'i, M.Pd." class="w-full h-full object-cover">`;
+
+            document.getElementById('trainer-secret-display').textContent = '••••••••••••••••';
+            document.getElementById('trainer-secret-toggle-text').textContent = 'Lihat';
+
+            renderTrainerDashboard();
+            lucide.createIcons();
+        }
+
+        function logoutSession() {
+            sessionStorage.removeItem('hitrac_active_session');
+            currentRole = null;
+            activeStudentToken = null;
+            document.getElementById('input-student-token').value = '';
+            document.getElementById('input-trainer-code').value = '';
+            document.getElementById('app-shell').classList.add('hidden');
+            document.getElementById('auth-gate').classList.remove('hidden');
+            showToast('Anda telah keluar dari sesi Hi-TraC LMS.');
+            lucide.createIcons();
+        }
+
+        function calculateCompletionPct() {
+            const student = getActiveStudent();
+            const total = curriculumData.length;
+            let done = 0;
+            for (let w = 1; w <= total; w++) {
+                if (student.progressByWeek[w]?.submitted) done++;
+            }
+            return Math.round((done / total) * 100);
+        }
+
+        function updateGlobalProgressBadges() {
+            const student = getActiveStudent();
+            let done = 0;
+            for (let w = 1; w <= curriculumData.length; w++) {
+                if (student.progressByWeek[w]?.submitted) done++;
+            }
+            const pct = Math.round((done / curriculumData.length) * 100);
+            document.getElementById('sidebar-completion-badge').textContent = `${done}/16 Tuntas`;
+            document.getElementById('header-user-role').innerHTML = `${student.school} • Progres: <span class="font-bold text-amber-300">${pct}%</span>`;
+        }
+
+        // ==========================================
+        // 4. KOLOM KIRI: DAFTAR NAMA KELAS
+        // ==========================================
+        function renderClassList() {
+            const student = getActiveStudent();
+            const container = document.getElementById('class-list-container');
+            const query = (document.getElementById('class-search')?.value || '').toLowerCase();
+
+            const filtered = curriculumData.filter(item =>
+                item.title.toLowerCase().includes(query) ||
+                `minggu ${item.week}`.includes(query) ||
+                item.tools.some(t => t.toLowerCase().includes(query))
+            );
+
+            container.innerHTML = filtered.map(item => {
+                const isSelected = item.week === activeWeek;
+                const wState = student.progressByWeek[item.week] || {};
+                const isDone = !!wState.submitted;
+
+                const activeClasses = isSelected
+                    ? 'bg-emerald-50 border-emerald-600 ring-1 ring-emerald-600/30'
+                    : 'bg-white hover:bg-slate-50 border-transparent';
+
+                return `
+                <button onclick="selectWeek(${item.week})" class="w-full text-left p-3 rounded-2xl border transition-all flex items-start gap-3 cursor-pointer ${activeClasses}">
+                    <div class="w-8 h-8 rounded-xl flex items-center justify-center font-display font-extrabold text-xs shrink-0 mt-0.5 ${
+                        isDone
+                            ? 'bg-emerald-700 text-white'
+                            : item.isMilestone
+                                ? 'gold-gradient text-slate-950'
+                                : isSelected
+                                    ? 'bg-emerald-900 text-amber-300'
+                                    : 'bg-slate-100 text-slate-600'
+                    }">
+                        ${isDone ? '✓' : item.week}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center justify-between gap-1">
+                            <span class="text-[10px] font-bold uppercase tracking-wider ${item.isMilestone ? 'text-amber-700' : 'text-slate-400'}">
+                                ${item.isMilestone ? (item.week === 8 ? 'UTS • 20%' : 'UAS • 40%') : `Minggu ${item.week}`}
+                            </span>
+                            ${isDone ? '<span class="text-[10px] font-bold text-emerald-700">Tuntas</span>' : ''}
+                        </div>
+                        <p class="text-xs font-bold leading-snug mt-0.5 ${isSelected ? 'text-emerald-950' : 'text-slate-800'}">
+                            ${item.title}
+                        </p>
+                    </div>
+                </button>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // 5. KOLOM KANAN: ISI KELAS & 6 SUB-TAB INTERAKTIF
+        // ==========================================
+        function selectWeek(weekNum) {
+            activeWeek = weekNum;
+            const student = getActiveStudent();
+            const item = curriculumData.find(w => w.week === weekNum);
+            const wState = student.progressByWeek[weekNum] || {};
+            // Update Banner Kelas Aktif
+            document.getElementById('active-week-badge').textContent = item.isMilestone
+                ? (item.week === 8 ? 'MINGGU 8 • UTS (20%)' : 'MINGGU 16 • UAS (40%)')
+                : `PERTEMUAN ${item.week}`;
+            document.getElementById('active-phase-badge').textContent = item.phase;
+            document.getElementById('active-class-title').textContent = item.title;
+
+            const statusPill = document.getElementById('active-status-pill');
+            if (wState.submitted) {
+                statusPill.textContent = '✓ Tugas Tuntas';
+                statusPill.className = 'px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-xs';
+            } else {
+                statusPill.textContent = '• Belum Submit Tugas';
+                statusPill.className = 'px-2.5 py-1 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold text-xs';
+            }
+
+            // Update 4 Mini Indikator Status
+            document.getElementById('ind-presensi').textContent = wState.present ? 'Hadir ✓' : 'Belum';
+            document.getElementById('ind-presensi').className = `text-xs font-extrabold mt-0.5 ${wState.present ? 'text-emerald-700' : 'text-rose-600'}`;
+
+            document.getElementById('ind-pretest').textContent = wState.preScore !== undefined ? `${wState.preScore}` : '-';
+            document.getElementById('ind-posttest').textContent = wState.postScore !== undefined ? `${wState.postScore}` : '-';
+
+            document.getElementById('ind-tugas').textContent = wState.submitted ? (wState.grade ? `Nilai ${wState.grade}` : 'Terkirim') : 'Belum';
+            document.getElementById('ind-tugas').className = `text-xs font-extrabold mt-0.5 ${wState.submitted ? 'text-emerald-700' : 'text-amber-700'}`;
+
+            renderClassList();
+            renderClassTabContent();
+        }
+
+        function switchClassTab(tabKey) {
+            activeClassTab = tabKey;
+            document.querySelectorAll('.class-tab-btn').forEach(btn => {
+                const isThis = btn.dataset.classtab === tabKey;
+                if (isThis) {
+                    btn.className = 'class-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all emerald-gradient text-white shadow-xs cursor-pointer';
+                } else if (btn.dataset.classtab === 'submit') {
+                    btn.className = 'class-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-amber-100 text-amber-900 hover:bg-amber-200 cursor-pointer';
+                } else {
+                    btn.className = 'class-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer';
+                }
+            });
+            renderClassTabContent();
+        }
+
+        function renderClassTabContent() {
+            const student = getActiveStudent();
+            const container = document.getElementById('class-tab-content');
+            const item = curriculumData.find(w => w.week === activeWeek);
+            const wState = student.progressByWeek[activeWeek] || {};
+            // TAB 1: MATERI & PANDUAN
+            if (activeClassTab === 'materi') {
+                container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Modul Pembelajaran & Panduan Praktik</span>
+                            <h3 class="font-display text-xl font-bold text-slate-900 mt-0.5">Fokus Materi: ${item.title}</h3>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${item.tools.map(t => `<span class="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">${t}</span>`).join('')}
+                        </div>
+                    </div>
+
+                    <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/80">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Deskripsi Cakupan Sesi</h4>
+                        <p class="text-sm text-slate-800 leading-relaxed font-medium">${item.submateri}</p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                            <i data-lucide="list-checks" class="w-4 h-4 text-emerald-700"></i>
+                            <span>Poin Kunci Panduan Workshop (30% Teori • 70% Praktik):</span>
+                        </h4>
+                        <div class="space-y-2.5">
+                            ${item.guidePoints.map((pt, idx) => `
+                                <div class="p-4 rounded-2xl bg-white border border-slate-200 flex items-start gap-3">
+                                    <span class="w-6 h-6 rounded-lg emerald-gradient text-white font-bold text-xs flex items-center justify-center shrink-0">${idx + 1}</span>
+                                    <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${pt}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end">
+                        <button onclick="switchClassTab('video')" class="px-5 py-2.5 rounded-xl emerald-gradient text-white text-xs font-bold flex items-center gap-2 hover:opacity-95 transition cursor-pointer">
+                            <span>Lanjut ke Rekaman Video</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>`;
+            }
+
+            // TAB 2: REKAMAN VIDEO
+            else if (activeClassTab === 'video') {
+                container.innerHTML = `
+                <div class="space-y-5">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Rekaman Sesi Sinkronus & Tutorial Alat AI</span>
+                        <h3 class="font-display text-xl font-bold text-slate-900 mt-0.5">${item.videoTitle}</h3>
+                    </div>
+
+                    <!-- Simulated Interactive Video Player Frame -->
+                    <div class="relative rounded-3xl overflow-hidden bg-slate-950 aspect-video border border-slate-800 shadow-lg flex flex-col items-center justify-center p-6 text-center group">
+                        <div class="absolute inset-0 opacity-25 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500 via-slate-900 to-slate-950"></div>
+                        <button onclick="showToast('Memutar ${item.videoTitle} (${item.videoDuration})')" class="relative z-10 w-16 h-16 rounded-full gold-gradient text-slate-950 flex items-center justify-center shadow-xl group-hover:scale-105 transition cursor-pointer">
+                            <i data-lucide="play" class="w-7 h-7 fill-current ml-0.5"></i>
+                        </button>
+                        <p class="relative z-10 text-white font-display font-bold text-base sm:text-lg mt-4 max-w-xl">${item.videoTitle}</p>
+                        <span class="relative z-10 mt-2 px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-semibold">Durasi: ${item.videoDuration} • Kualitas HD 1080p</span>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-4">
+                        <p class="text-xs text-amber-900"><strong>Tips Belajar:</strong> Sambil menyimak rekaman demonstrasi alat AI, siapkan jendela kerja untuk langsung mempraktikkan kerangka R-C-S.</p>
+                        <button onclick="switchClassTab('presensi')" class="px-4 py-2 rounded-xl bg-amber-900 text-white text-xs font-bold shrink-0 cursor-pointer">Isi Presensi →</button>
+                    </div>
+                </div>`;
+            }
+
+            // TAB 3: PRESENSI KELAS
+            else if (activeClassTab === 'presensi') {
+                const isPresent = !!wState.present;
+                container.innerHTML = `
+                <div class="max-w-xl mx-auto py-6 text-center space-y-5">
+                    <div class="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center ${isPresent ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                        <i data-lucide="${isPresent ? 'check-circle-2' : 'user-check'}" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Daftar Hadir Peserta Diklat</span>
+                        <h3 class="font-display text-2xl font-bold text-slate-900 mt-1">Presensi Pertemuan ${item.week}: ${item.title}</h3>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-2">
+                            Kehadiran dan keaktifan praktik prompting memiliki bobot penilaian <strong>15%</strong> dari total kelulusan pelatihan Hi-TraC.
+                        </p>
+                    </div>
+
+                    ${isPresent ? `
+                        <div class="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-1">
+                            <p class="font-bold text-sm">✓ Kehadiran Anda Sudah Tercatat di Sistem Trainer</p>
+                            <p class="text-xs text-emerald-700">Peserta: ${student.name} (${student.token}) • Status: Hadir & Aktif Mengikuti Workshop</p>
+                        </div>
+                    ` : `
+                        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                            <input type="text" id="attendance-note" placeholder="Tuliskan satu target keterampilan AI yang ingin Anda kuasai hari ini..." class="w-full px-4 py-2.5 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                            <button onclick="recordAttendance()" class="w-full py-3 rounded-xl emerald-gradient text-white font-bold text-sm shadow-sm hover:opacity-95 transition cursor-pointer">
+                                Konfirmasi Kehadiran Sekarang
+                            </button>
+                        </div>
+                    `}
+                </div>`;
+            }
+
+            // TAB 4: PRE-TEST & POST-TEST
+            else if (activeClassTab === 'pretest') {
+                const qObj = item.quizQuestion;
+                container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Evaluasi Pemahaman Konsep</span>
+                            <h3 class="font-display text-xl font-bold text-slate-900 mt-0.5">Pre-Test & Post-Test Pertemuan ${item.week}</h3>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="px-3 py-1.5 rounded-xl bg-slate-100 text-xs font-bold text-slate-700">Skor Pre-Test: <strong class="text-emerald-700">${wState.preScore ?? 'Belum'}</strong></span>
+                            <span class="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900">Skor Post-Test: <strong class="text-emerald-700">${wState.postScore ?? 'Belum'}</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                        <p class="text-sm font-bold text-slate-900">Pertanyaan Uji Pemahaman:</p>
+                        <p class="text-sm text-slate-700 leading-relaxed">${qObj.q}</p>
+                        <div class="space-y-2">
+                            ${qObj.options.map((opt, idx) => `
+                                <label class="flex items-center gap-3 p-3.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 cursor-pointer transition">
+                                    <input type="radio" name="quiz-answer" value="${idx}" class="w-4 h-4 text-emerald-700 focus:ring-emerald-600">
+                                    <span class="text-xs sm:text-sm text-slate-700">${opt}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+
+                        <div class="pt-2 flex flex-wrap gap-3">
+                            <button onclick="submitQuizScore('pre')" class="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition cursor-pointer">
+                                Simpan sebagai Hasil Pre-Test
+                            </button>
+                            <button onclick="submitQuizScore('post')" class="px-5 py-2.5 rounded-xl emerald-gradient text-white text-xs font-bold hover:opacity-95 transition cursor-pointer">
+                                Simpan sebagai Hasil Post-Test
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            // TAB 5: INSTRUKSI TUGAS
+            else if (activeClassTab === 'tugas') {
+                container.innerHTML = `
+                <div class="space-y-6">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-amber-700">Project-Based Learning (Bobot Tugas Mingguan 25%)</span>
+                        <h3 class="font-display text-xl font-bold text-slate-900 mt-0.5">Instruksi Tugas Praktik — Minggu ${item.week}</h3>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-3">
+                        <h4 class="text-sm font-bold text-emerald-950 flex items-center gap-2">
+                            <i data-lucide="target" class="w-4 h-4 text-emerald-700"></i>
+                            <span>Target Produk yang Harus Dihasilkan:</span>
+                        </h4>
+                        <p class="text-sm text-slate-800 leading-relaxed">${item.taskInstruction}</p>
+                    </div>
+
+                    <div class="p-5 rounded-2xl bg-slate-900 text-white space-y-2">
+                        <p class="text-xs font-bold text-amber-400 uppercase tracking-wider">Ketentuan Wajib Hi-TraC (Etika Penggunaan AI):</p>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            "Peserta wajib menggunakan AI sebagai asisten, bukan pengganti otak. Setiap tugas yang menggunakan bantuan AI <strong>harus menyertakan lampiran Prompt Log</strong> (daftar perintah yang diberikan ke AI) serta catatan verifikasi guru."
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button onclick="switchClassTab('submit')" class="px-5 py-3 rounded-xl gold-gradient text-slate-950 font-bold text-xs flex items-center gap-2 shadow-sm hover:opacity-95 transition cursor-pointer">
+                            <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                            <span>Lanjut ke Form Submit Tugas</span>
+                        </button>
+                    </div>
+                </div>`;
+            }
+
+            // TAB 6: SUBMIT TUGAS & PROMPT LOG
+            else if (activeClassTab === 'submit') {
+                container.innerHTML = `
+                <div class="space-y-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Penyerahan Karya & Transparansi Proses</span>
+                            <h3 class="font-display text-xl font-bold text-slate-900 mt-0.5">Submit Tugas Pertemuan ${item.week}</h3>
+                        </div>
+                        ${wState.submitted ? `<span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">✓ Sudah Dikumpulkan (Terkoneksi ke Trainer)</span>` : ''}
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Tautan Hasil Karya / Produk AI (Google Drive / Gamma / Quizizz / Sites) *</label>
+                                <input type="url" id="submit-link" value="${wState.link || ''}" placeholder="https://docs.google.com/..." class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Catatan Kurasi Guru (Teacher-in-the-Loop) *</label>
+                                <textarea id="submit-note" rows="3" placeholder="Jelaskan bagian mana dari output AI yang Anda perbaiki atau sesuaikan dengan kondisi siswa..." class="w-full p-3 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600">${wState.note || ''}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-bold text-amber-800">Lampiran Wajib: Prompt Log (Kerangka R-C-S) *</label>
+                                <button type="button" onclick="insertRCSBoilerplate()" class="text-[11px] font-bold text-emerald-700 hover:underline cursor-pointer">+ Isi Template R-C-S</button>
+                            </div>
+                            <textarea id="submit-prompt-log" rows="7" placeholder="Tempelkan daftar perintah (prompt) yang Anda gunakan ke AI di sini..." class="w-full p-3.5 text-xs bg-slate-900 text-emerald-200 font-mono border border-slate-700 rounded-xl focus:outline-none focus:border-amber-400">${wState.promptLog || ''}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <p class="text-[11px] text-slate-500">Data yang Anda kirim akan langsung memperbarui status ketuntasan di <strong>Dashboard Trainer</strong>.</p>
+                        <button onclick="submitWeeklyAssignment()" class="px-6 py-3 rounded-xl emerald-gradient text-white font-bold text-xs shadow-md hover:opacity-95 transition flex items-center justify-center gap-2 cursor-pointer">
+                            <i data-lucide="send" class="w-4 h-4 text-amber-300"></i>
+                            <span>Kirim Tugas & Tandai Tuntas</span>
+                        </button>
+                    </div>
+                </div>`;
+            }
+
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // 6. AKSI INTERAKTIF SISWA (PRESENSI, KUIS, SUBMIT TUGAS)
+        // ==========================================
+        function recordAttendance() {
+            const student = getActiveStudent();
+            if (!student.progressByWeek[activeWeek]) student.progressByWeek[activeWeek] = {};
+            student.progressByWeek[activeWeek].present = true;
+            saveRegistry();
+            selectWeek(activeWeek);
+            showToast(`Presensi Pertemuan ${activeWeek} berhasil dicatat!`);
+        }
+
+        function submitQuizScore(type) {
+            const student = getActiveStudent();
+            const selected = document.querySelector('input[name="quiz-answer"]:checked');
+            if (!selected) {
+                showToast('Pilih salah satu jawaban terlebih dahulu.');
+                return;
+            }
+            const item = curriculumData.find(w => w.week === activeWeek);
+            const isCorrect = parseInt(selected.value, 10) === item.quizQuestion.correct;
+            const score = isCorrect ? 100 : 60;
+
+            if (!student.progressByWeek[activeWeek]) student.progressByWeek[activeWeek] = {};
+            if (type === 'pre') {
+                student.progressByWeek[activeWeek].preScore = score;
+                showToast(`Skor Pre-Test tersimpan: ${score}`);
+            } else {
+                student.progressByWeek[activeWeek].postScore = score;
+                showToast(`Skor Post-Test tersimpan: ${score}`);
+            }
+            saveRegistry();
+            selectWeek(activeWeek);
+        }
+
+        function insertRCSBoilerplate() {
+            const box = document.getElementById('submit-prompt-log');
+            box.value = `ROLE: Bertindaklah sebagai Pakar Kurikulum & Desainer Pembelajaran.\nCONTEXT: Kelas jenjang SMP/SMA dengan karakteristik siswa beragam.\nSPECIFICITY: Buatkan produk pembelajaran terstruktur beserta rubrik evaluasinya.`;
+        }
+
+        function submitWeeklyAssignment() {
+            const student = getActiveStudent();
+            const link = document.getElementById('submit-link').value.trim();
+            const promptLog = document.getElementById('submit-prompt-log').value.trim();
+            const note = document.getElementById('submit-note').value.trim();
+
+            if (!link || !promptLog) {
+                showToast('Tautan karya dan lampiran Prompt Log wajib diisi!');
+                return;
+            }
+
+            if (!student.progressByWeek[activeWeek]) student.progressByWeek[activeWeek] = {};
+            student.progressByWeek[activeWeek] = {
+                ...student.progressByWeek[activeWeek],
+                present: true,
+                submitted: true,
+                link,
+                promptLog,
+                note: note || 'Diverifikasi oleh guru (Teacher-in-the-loop).'
+            };
+
+            saveRegistry();
+            selectWeek(activeWeek);
+            showToast(`Tugas Minggu ${activeWeek} terkirim & status berubah menjadi TUNTAS!`);
+        }
+
+        // ==========================================
+        // 7. DASHBOARD TRAINER LOGIC (MONITORING & TOKEN MANAGEMENT)
+        // ==========================================
+        function toggleTrainerSecretDisplay() {
+            trainerSecretVisible = !trainerSecretVisible;
+            const display = document.getElementById('trainer-secret-display');
+            const toggleText = document.getElementById('trainer-secret-toggle-text');
+            if (trainerSecretVisible) {
+                display.textContent = TRAINER_ACCESS_CODE;
+                toggleText.textContent = 'Sembunyikan';
+            } else {
+                display.textContent = '••••••••••••••••';
+                toggleText.textContent = 'Lihat';
+            }
+        }
+
+        function copyTrainerSecret() {
+            copyToClipboard(TRAINER_ACCESS_CODE);
+            showToast('Trainer Master Access Code disalin ke clipboard!');
+        }
+
+        function createNewStudentToken(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('new-student-name');
+            const schoolInput = document.getElementById('new-student-school');
+            const fullName = nameInput.value.trim();
+            const school = schoolInput.value.trim();
+
+            if (!fullName || !school) return;
+
+            const count = Object.keys(studentsRegistry).length + 1;
+            const numPrefix = String(count).padStart(2, '0');
+            const cleanWord = fullName.replace(/[^a-zA-Z\s]/g, '').trim().split(/\s+/)[0].toUpperCase() || 'PESERTA';
+            const newToken = `HTR-${numPrefix}-${cleanWord}`;
+
+            studentsRegistry[newToken] = {
+                token: newToken,
+                name: fullName,
+                school: school,
+                progressByWeek: {}
+            };
+
+            saveRegistry();
+            nameInput.value = '';
+            schoolInput.value = '';
+            renderTrainerDashboard();
+            copyToClipboard(newToken);
+            showToast(`Token baru ${newToken} berhasil dibuat & disalin!`);
+        }
+
+        function copySingleStudentToken(token) {
+            copyToClipboard(token);
+            showToast(`Token siswa ${token} disalin ke clipboard!`);
+        }
+
+        function populateTrainerWeekFilter() {
+            const select = document.getElementById('trainer-week-filter');
+            select.innerHTML = curriculumData.map(w =>
+                `<option value="${w.week}">Filter Kelas: Minggu ${w.week} — ${w.title}</option>`
+            ).join('');
+        }
+
+        function renderTrainerDashboard() {
+            const selectedWeek = parseInt(document.getElementById('trainer-week-filter').value || '1', 10);
+            const weekObj = curriculumData.find(w => w.week === selectedWeek);
+            document.getElementById('trainer-table-title').textContent = `Rekap Ketuntasan Peserta — Minggu ${selectedWeek}: ${weekObj.title}`;
+
+            const allParticipants = Object.values(studentsRegistry).map(st => {
+                const wState = st.progressByWeek[selectedWeek] || {};
+                let completedCount = 0;
+                for (let w = 1; w <= 16; w++) {
+                    if (st.progressByWeek[w]?.submitted) completedCount++;
+                }
+                return {
+                    token: st.token,
+                    name: st.name,
+                    school: st.school,
+                    completedCount,
+                    present: !!wState.present,
+                    pre: wState.preScore ?? '-',
+                    post: wState.postScore ?? '-',
+                    submitted: !!wState.submitted,
+                    grade: wState.grade || null,
+                    link: wState.link || '',
+                    promptLog: wState.promptLog || '',
+                    note: wState.note || ''
+                };
+            });
+
+            // Update KPI Cards
+            document.getElementById('kpi-total-students').textContent = `${allParticipants.length} Peserta`;
+            const submittedCount = allParticipants.filter(p => p.submitted).length;
+            const completionPct = allParticipants.length ? Math.round((submittedCount / allParticipants.length) * 100) : 0;
+            document.getElementById('kpi-task-completion').textContent = `${completionPct}%`;
+            document.getElementById('kpi-task-sub').textContent = `${submittedCount} dari ${allParticipants.length} peserta telah submit`;
+
+            const tbody = document.getElementById('trainer-students-tbody');
+            tbody.innerHTML = allParticipants.map(p => {
+                const overallPct = Math.round((p.completedCount / 16) * 100);
+                return `
+                <tr class="hover:bg-slate-50/90 transition">
+                    <td class="py-4 px-5">
+                        <p class="font-bold text-slate-900">${p.name}</p>
+                        <p class="text-[11px] text-slate-500">${p.school}</p>
+                    </td>
+                    <td class="py-4 px-4">
+                        <button onclick="copySingleStudentToken('${p.token}')" title="Klik untuk salin token siswa" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-emerald-900 text-amber-300 font-mono text-[11px] font-bold transition cursor-pointer">
+                            <span>${p.token}</span>
+                            <i data-lucide="copy" class="w-3 h-3 text-slate-400"></i>
+                        </button>
+                    </td>
+                    <td class="py-4 px-4">
+                        ${p.present
+                            ? `<span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold">Hadir</span>`
+                            : `<span class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 font-bold">Belum Hadir</span>`
+                        }
+                    </td>
+                    <td class="py-4 px-4 font-semibold text-slate-700">${p.pre}</td>
+                    <td class="py-4 px-4 font-bold text-emerald-700">${p.post}</td>
+                    <td class="py-4 px-4">
+                        ${p.submitted
+                            ? `<div class="flex items-center gap-2">
+                                <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold">✓ Tuntas ${p.grade ? `(${p.grade})` : ''}</span>
+                                <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 text-[10px] font-bold">Prompt Log ✓</span>
+                               </div>`
+                            : `<span class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-bold">Menunggu Submit</span>`
+                        }
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="w-32">
+                            <div class="flex justify-between text-[10px] font-bold mb-1">
+                                <span>${p.completedCount}/16 Kelas</span>
+                                <span>${overallPct}%</span>
+                            </div>
+                            <div class="w-full bg-slate-200 rounded-full h-1.5">
+                                <div class="emerald-gradient h-1.5 rounded-full" style="width: ${overallPct}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-5 text-right">
+                        <button onclick='openInspectModal(${JSON.stringify(p).replace(/'/g, "&#39;")}, ${selectedWeek})' class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-emerald-900 text-white font-bold text-[11px] transition cursor-pointer">
+                            Periksa Karya & Log
+                        </button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function openInspectModal(participant, weekNum) {
+            inspectingTarget = { token: participant.token, week: weekNum };
+            document.getElementById('inspect-student-name').textContent = `${participant.name} (${participant.token}) — Minggu ${weekNum}`;
+            document.getElementById('inspect-grade-input').value = participant.grade || 95;
+
+            const body = document.getElementById('inspect-modal-body');
+            if (!participant.submitted) {
+                body.innerHTML = `<div class="p-6 text-center bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 font-semibold">Peserta ini belum mengumpulkan tugas pada Minggu ke-${weekNum}.</div>`;
+            } else {
+                body.innerHTML = `
+                <div class="space-y-4">
+                    <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                        <p class="font-bold text-slate-700 mb-1">Tautan Produk Tugas:</p>
+                        <a href="${participant.link}" target="_blank" class="text-emerald-700 underline break-all font-medium">${participant.link}</a>
+                    </div>
+                    <div>
+                        <p class="font-bold text-amber-800 mb-1.5">Lampiran Prompt Log (Audit Transparansi Proses Berpikir):</p>
+                        <pre class="p-4 rounded-2xl bg-slate-900 text-emerald-200 font-mono whitespace-pre-wrap leading-relaxed">${participant.promptLog}</pre>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900">
+                        <strong>Catatan Validasi Guru:</strong> ${participant.note || 'Output AI telah dikurasi sesuai konteks kelas.'}
+                    </div>
+                </div>`;
+            }
+
+            const modal = document.getElementById('trainer-inspect-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeInspectModal() {
+            const modal = document.getElementById('trainer-inspect-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function approveStudentSubmission() {
+            if (!inspectingTarget) return;
+            const grade = parseInt(document.getElementById('inspect-grade-input').value || '95', 10);
+            const student = studentsRegistry[inspectingTarget.token];
+
+            if (student) {
+                if (!student.progressByWeek[inspectingTarget.week]) student.progressByWeek[inspectingTarget.week] = {};
+                student.progressByWeek[inspectingTarget.week].grade = grade;
+                student.progressByWeek[inspectingTarget.week].submitted = true;
+                saveRegistry();
+            }
+
+            closeInspectModal();
+            renderTrainerDashboard();
+            showToast(`Nilai (${grade}) untuk ${inspectingTarget.token} berhasil diverifikasi!`);
+        }
+
+        function exportTrainerReport() {
+            const selectedWeek = document.getElementById('trainer-week-filter').value;
+            copyToClipboard(`REKAP KETUNTASAN DIKLAT HI-TRAC - MINGGU ${selectedWeek}\nTanggal Ekspor: ${new Date().toLocaleDateString('id-ID')}\nStatus: Tersinkronisasi dengan Lampiran Prompt Log.`);
+            showToast('Rekap ketuntasan peserta berhasil disalin ke clipboard!');
+        }
+
+        // ==========================================
+        // 8. UTILITIES (CLIPBOARD & TOAST)
+        // ==========================================
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(textarea);
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto bg-slate-900 text-white border border-amber-400/50 px-4 py-3 rounded-2xl shadow-xl text-xs font-medium flex items-center gap-2.5';
+            toast.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
